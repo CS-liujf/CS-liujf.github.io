@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>在VMware+centOS 8上基于http协议搭建Git服务器并实现外网访问 - Hexo</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="Hexo"><meta name="msapplication-TileImage" content="/img/favicon.svg"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Hexo"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta description="本文最终目的是实现Android终端访问虚拟机中git服务，所以需要搭建http协议的git服务器，而如何搭建http协议的git服务器，前人之述备矣，遂部分借鉴前人之作这里"><meta property="og:type" content="blog"><meta property="og:title" content="在VMware+centOS 8上基于http协议搭建Git服务器并实现外网访问"><meta property="og:url" content="https://cs-liujf/github.io/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE.html"><meta property="og:site_name" content="Hexo"><meta property="og:description" content="本文最终目的是实现Android终端访问虚拟机中git服务，所以需要搭建http协议的git服务器，而如何搭建http协议的git服务器，前人之述备矣，遂部分借鉴前人之作这里"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://cs-liujf/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE/cover.jpg"><meta property="article:published_time" content="2021-01-11T13:07:14.000Z"><meta property="article:modified_time" content="2021-01-11T13:12:18.823Z"><meta property="article:author" content="Fly"><meta property="article:tag" content="CS"><meta property="article:tag" content="Linux"><meta property="article:tag" content="git"><meta property="twitter:card" content="summary"><meta property="twitter:image" content="/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE/cover.jpg"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://cs-liujf/github.io/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE.html"},"headline":"Hexo","image":["https://cs-liujf/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE/cover.jpg"],"datePublished":"2021-01-11T13:07:14.000Z","dateModified":"2021-01-11T13:12:18.823Z","author":{"@type":"Person","name":"Fly"},"description":"本文最终目的是实现Android终端访问虚拟机中git服务，所以需要搭建http协议的git服务器，而如何搭建http协议的git服务器，前人之述备矣，遂部分借鉴前人之作这里"}</script><link rel="canonical" href="https://cs-liujf/github.io/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE.html"><link rel="icon" href="/img/favicon.svg"><link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/font-awesome/5.12.0/css/all.min.css"><link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css"><link rel="stylesheet"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/cookieconsent/3.1.1/cookieconsent.min.css"><link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/justifiedGallery/3.7.0/css/justifiedGallery.min.css"><!--!--><!--!--><!--!--><script src="https://cdnjs.loli.net/ajax/libs/pace/1.0.2/pace.min.js"></script><!--!--><!--!--><script src="//code.tidio.co/azvaamstgollj3godm5gsxli0ghb0ccq.js" async></script><meta name="generator" content="Hexo 5.3.0"></head><body class="is-3-column"><script type="text/javascript" src="/js/imaegoo/night.js"></script><canvas id="universe"></canvas><nav class="navbar navbar-main"><div class="container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img class="logo-img" src="/img/logo.svg" alt="Hexo" height="28"><img class="logo-img-dark" src="/" alt="Hexo" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">主页</a><a class="navbar-item" href="/archives">归档</a><a class="navbar-item" href="/categories">分类</a><a class="navbar-item" href="/tags">标签</a><a class="navbar-item" href="/about">关于</a></div><div class="navbar-end"><a class="navbar-item" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus"><i class="fab fa-github"></i></a><a class="navbar-item night" id="night-nav" title="Night Mode" href="javascript:;"><i class="fas fa-moon" id="night-icon"></i></a><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-9-widescreen"><div class="card"><div class="card-image"><span class="image is-7by3"><img class="fill" src="/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE/cover.jpg" alt="在VMware+centOS 8上基于http协议搭建Git服务器并实现外网访问"></span></div><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2021-01-11T13:07:14.000Z" title="2021/1/11 下午9:07:14">2021-01-11</time>发表</span><span class="level-item"><time dateTime="2021-01-11T13:12:18.823Z" title="2021/1/11 下午9:12:18">2021-01-11</time>更新</span><span class="level-item"><a class="link-muted" href="/categories/Computer-Science/">Computer Science</a><span> / </span><a class="link-muted" href="/categories/Computer-Science/Linux/">Linux</a></span><span class="level-item">7 分钟读完 (大约987个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">在VMware+centOS 8上基于http协议搭建Git服务器并实现外网访问</h1><div class="content"><p>本文最终目的是实现Android终端访问虚拟机中git服务，所以需要搭建http协议的git服务器，而如何搭建http协议的git服务器，前人之述备矣，遂部分借鉴前人之作<a target="_blank" rel="noopener" href="https://www.cnblogs.com/Tsubasa0769/p/11625599.html">这里</a></p>
+<a id="more"></a>
+
+<h4 id="一-设备信息"><a href="#一-设备信息" class="headerlink" title="一.设备信息"></a>一.设备信息</h4><ul>
+<li>windows10个人专业版(1909)</li>
+<li>VMware 15Pro(15.5.0 build-14665864)</li>
+<li>centOS 8(1905已关闭GUI，VMware采用NAT模式)</li>
+</ul>
+<h4 id="二-准备工作"><a href="#二-准备工作" class="headerlink" title="二.准备工作"></a>二.准备工作</h4><h5 id="windows防火墙开放80端口"><a href="#windows防火墙开放80端口" class="headerlink" title="windows防火墙开放80端口"></a>windows防火墙开放80端口</h5><ol>
+<li><p>控制面板 -&gt; 系统和安全 -&gt; Windows Defender 防火墙</p>
+</li>
+<li><p>点击高级设置 -&gt; 点击入站规则 -&gt; 新建规则</p>
+</li>
+<li><p>更改要创建的规则类型为端口</p>
+</li>
+<li><p>按照图示方式设置</p>
+<div align=center><img src="git服务并实现外网访问/figure1.jpg"></div>
+</li>
+<li><p>选择允许连接并下一步</p>
+</li>
+<li><p>按照图示方式设置</p>
+<div align=center><img src="git服务并实现外网访问/figure2.jpg"></div>
+</li>
+<li><p>名称设置随便</p>
+</li>
+<li><p>点击出站规则 -&gt; 新建规则</p>
+</li>
+<li><p>后续步骤与上述入站规则设置保持一致</p>
+</li>
+</ol>
+<h5 id="关闭SELinux"><a href="#关闭SELinux" class="headerlink" title="关闭SELinux"></a>关闭SELinux</h5><ol>
+<li><p>打开SELinux配置文件</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/selinux/config</span><br></pre></td></tr></table></figure></li>
+<li><p>修改SELINUX=disabled</p>
+</li>
+<li><p>重启centOS即可永久关闭SELinux</p>
+</li>
+</ol>
+<p><em>注：</em></p>
+<ul>
+<li>SELinux一共有3种状态，分别是<strong>Enforcing</strong>，<strong>Permissive</strong>和<strong>Disabled</strong></li>
+<li>查看当前状态命令：getenforcing</li>
+<li>临时关闭命令：    setenforce 0</li>
+<li>临时开启：setenforce 1（<strong>不可用于永久关闭后的开启</strong>）</li>
+</ul>
+<h5 id="下载花生壳并配置"><a href="#下载花生壳并配置" class="headerlink" title="下载花生壳并配置"></a>下载花生壳并配置</h5><ol>
+<li><p>访问花生壳官网进入个人体验版</p>
+</li>
+<li><p>打开花生壳软件并点击右下角“+”</p>
+</li>
+<li><p>进行如下配置：</p>
+<p>应用类型选择HTTP，内网主机为你的windows电脑ip地址，内网端口为80</p>
+<p><em>虽然使用HTTP要向花生壳支付6元，但是6元买一年可获赠98年，四舍五入等于不要钱！(后文还会介绍一个比花生壳良心的内网穿透工具)</em></p>
+</li>
+</ol>
+<h4 id="三-安装apache"><a href="#三-安装apache" class="headerlink" title="三.安装apache"></a>三.安装apache</h4><ol>
+<li><p>安装httpd</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install httpd</span><br></pre></td></tr></table></figure></li>
+<li><p>启动httpd服务</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl <span class="built_in">start</span> httpd.service</span><br></pre></td></tr></table></figure></li>
+<li><p>修改firewalld配置文件和重启firewalld</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">firewall<span class="literal">-cmd</span> -<span class="literal">-zone</span>=public -<span class="literal">-add</span><span class="literal">-port</span>=<span class="number">80</span>/tcp -<span class="literal">-permanent</span></span><br><span class="line">systemctl restart firewalld.service</span><br></pre></td></tr></table></figure>
+<p>如果嫌麻烦可直接关闭防火墙（风险自理）</p>
+</li>
+</ol>
+<p><em>注：</em></p>
+<ul>
+<li>看防火墙状态：systemctl status firewalld</li>
+<li>暂时关闭防火墙：systemctl stop firewalld</li>
+<li>永久关闭防火墙： systemctl disable firewalld</li>
+<li>重启防火墙：systemctl enable firewalld（该命令可永久开启防火墙）</li>
+</ul>
+<h4 id="四-配置git"><a href="#四-配置git" class="headerlink" title="四.配置git"></a>四.配置git</h4><ol>
+<li><p>新建仓库</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">mkdir <span class="literal">-p</span> /home/gitrepo/share.git   //空仓库可设置于任意目录下</span><br><span class="line"><span class="built_in">cd</span> /home/gitrepo/share.git</span><br><span class="line">git init -<span class="literal">-bare</span></span><br><span class="line">chown <span class="literal">-R</span> apache:apache /home/gitrepo</span><br></pre></td></tr></table></figure></li>
+<li><p>创建账号并设置权限</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">htpasswd <span class="literal">-m</span> <span class="literal">-c</span> /etc/httpd/conf.d/git<span class="literal">-team</span>.htpasswd XXX //XXX为账户名可任意设定</span><br><span class="line">chown apache:apache /etc/httpd/conf.d/git<span class="literal">-team</span>.htpasswd</span><br><span class="line">chmod <span class="number">640</span> /etc/httpd/conf.d/git<span class="literal">-team</span>.htpasswd</span><br></pre></td></tr></table></figure>
+<h4 id="五-配置apache"><a href="#五-配置apache" class="headerlink" title="五.配置apache"></a>五.配置apache</h4></li>
+<li><p>编辑配置文件</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">vi /etc/httpd/conf/httpd.conf</span><br></pre></td></tr></table></figure>
+<p>在最后一行IncludeOptional conf.d/*.conf的上面添加如下内容</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">&lt;VirtualHost *:80&gt;</span><br><span class="line">        ServerName X.X.X.X <span class="comment">#centOS的IP地址</span></span><br><span class="line">        SetEnv GIT_HTTP_EXPORT_ALL</span><br><span class="line">        SetEnv GIT_PROJECT_ROOT /home/gitrepo  <span class="comment">#此处应与创建空仓库的位置一致</span></span><br><span class="line">        ScriptAlias /git/ /usr/libexec/git-core/git-http-backend/</span><br><span class="line">        &lt;Location /&gt;</span><br><span class="line">                AuthType Basic</span><br><span class="line">                AuthName <span class="string">&quot;Git&quot;</span></span><br><span class="line">                AuthUserFile /etc/httpd/conf.d/git-team.htpasswd</span><br><span class="line">                Require valid-user</span><br><span class="line">        &lt;/Location&gt;</span><br><span class="line">&lt;/VirtualHost&gt;</span><br></pre></td></tr></table></figure></li>
+<li><p>重启httpd</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">systemctl restart httpd.service</span><br></pre></td></tr></table></figure></li>
+</ol>
+<p><em>注：</em></p>
+<ul>
+<li>查询httpd服务状态 ：systemctl status httpd.service</li>
+<li>查询httpd服务是否为开机启动： systemctl is-enabled httpd.service</li>
+<li>设置httpd服务为开机启动状态：systemctl enable httpd.service</li>
+<li>设置httpd服务为开机不启动状态：systemctl disable httpd.service</li>
+</ul>
+<p>完成上述这些操作后，即可在外网进行git操作，例如clone</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git clone http://花生壳提供的域名/git/share.git</span><br></pre></td></tr></table></figure>
+<h4 id="六-Android终端访问上述Git服务"><a href="#六-Android终端访问上述Git服务" class="headerlink" title="六.Android终端访问上述Git服务"></a>六.Android终端访问上述Git服务</h4><p>推荐使用Pocket Git，该app可在Googleplay中下载<br>下载地址：<a target="_blank" rel="noopener" href="https://pan.baidu.com/s/1_D8SGOJWSZofi6yBR5gG2Q">百度云</a>（提取码:hv59）</p>
+<h4 id="七-后记"><a href="#七-后记" class="headerlink" title="七.后记"></a>七.后记</h4><p>其实花生壳十分坑爹，每月的流量甚少，且速度的限制也很严格，只是胜在稳定，得到了合法的认可，如果你也对花生壳不感冒，那么我推荐<a target="_blank" rel="noopener" href="https://www.natfrp.com/">Sakura Frp</a>，我们可以用它替代花生壳做内网穿透。</p>
+</div><div class="article-licensing box"><div class="licensing-title"><p>在VMware+centOS 8上基于http协议搭建Git服务器并实现外网访问</p><p><a href="https://cs-liujf/github.io/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE.html">https://cs-liujf/github.io/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE.html</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>Fly</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2021-01-11</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2021-01-11</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icon" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a><a class="icon" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a><a class="icon" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><hr style="height:1px;margin:1rem 0"><div class="level is-mobile is-flex"><div class="article-tags is-size-7 is-uppercase"><i class="fas fa-tags has-text-grey"></i> <a class="link-muted" rel="tag" href="/tags/CS/">CS, </a><a class="link-muted" rel="tag" href="/tags/Linux/">Linux, </a><a class="link-muted" rel="tag" href="/tags/git/">git </a></div></div><!--!--></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/" alt="支付宝"></span></a><a class="button donate" data-type="wechat"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="/img/wechat.png" alt="微信"></span></a></div></div></div><div class="card"><nav class="post-navigation mt-4 level is-mobile card-content"><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%85%AC%E5%BC%8F%E7%9A%84%E5%BA%94%E7%94%A8.html"><span class="level-item">贝叶斯公式的应用</span><i class="level-item fas fa-chevron-right"></i></a></div></nav></div><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div id="comment-container"></div><link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/gitalk/1.6.2/gitalk.css"><script src="https://cdnjs.loli.net/ajax/libs/gitalk/1.6.2/gitalk.min.js"></script><script>var gitalk = new Gitalk({
+            id: "8d19d6b86a3a630196cfe4b37c236094",
+            repo: "CS-liujf.github.io",
+            owner: "CS-liujf",
+            clientID: "41c3693629cb5358c3a4",
+            clientSecret: "d81b5ee852df5196724842ad3af8d4e73bd67ffd",
+            admin: ["CS-liujf"],
+            createIssueManually: false,
+            distractionFreeMode: false,
+            perPage: 10,
+            pagerDirection: "last",
+            
+            
+            enableHotKey: true,
+            
+        })
+        gitalk.render('comment-container')</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-3-widescreen  order-1"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/avatar.png" alt="Fly"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">Fly</p><p class="is-size-6 is-block">背嶪太山之崔嵬，翼举长云之纵横</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>Chengdu, China</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">10</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">9</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">13</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/ppoffice" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/ppoffice"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Facebook" href="https://facebook.com"><i class="fab fa-facebook"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Twitter" href="https://twitter.com"><i class="fab fa-twitter"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Dribbble" href="https://dribbble.com"><i class="fab fa-dribbble"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><figure class="media-left"><a class="image" href="/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE.html"><img src="/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE/thumbnail.jpg" alt="在VMware+centOS 8上基于http协议搭建Git服务器并实现外网访问"></a></figure><div class="media-content"><p class="date"><time dateTime="2021-01-11T13:07:14.000Z">2021-01-11</time></p><p class="title"><a href="/git%E6%9C%8D%E5%8A%A1%E5%B9%B6%E5%AE%9E%E7%8E%B0%E5%A4%96%E7%BD%91%E8%AE%BF%E9%97%AE.html">在VMware+centOS 8上基于http协议搭建Git服务器并实现外网访问</a></p><p class="categories"><a href="/categories/Computer-Science/">Computer Science</a> / <a href="/categories/Computer-Science/Linux/">Linux</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%85%AC%E5%BC%8F%E7%9A%84%E5%BA%94%E7%94%A8.html"><img src="/%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%85%AC%E5%BC%8F%E7%9A%84%E5%BA%94%E7%94%A8/thumbnail.jpg" alt="贝叶斯公式的应用"></a></figure><div class="media-content"><p class="date"><time dateTime="2021-01-10T03:05:15.000Z">2021-01-10</time></p><p class="title"><a href="/%E8%B4%9D%E5%8F%B6%E6%96%AF%E5%85%AC%E5%BC%8F%E7%9A%84%E5%BA%94%E7%94%A8.html">贝叶斯公式的应用</a></p><p class="categories"><a href="/categories/%E6%95%B0%E5%AD%A6/">数学</a> / <a href="/categories/%E6%95%B0%E5%AD%A6/Probability-and-Statistics/">Probability and Statistics</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BA%BA%E7%B1%BB%E4%BC%9A%E9%80%89%E6%8B%A9%E5%A8%81%E6%85%91%E5%BA%A6%E4%B8%BA10%E7%9A%84%E7%A8%8B%E5%BF%83%E4%B8%BA%E6%89%A7%E5%89%91%E8%80%85.html"><img src="/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BA%BA%E7%B1%BB%E4%BC%9A%E9%80%89%E6%8B%A9%E5%A8%81%E6%85%91%E5%BA%A6%E4%B8%BA10%E7%9A%84%E7%A8%8B%E5%BF%83%E4%B8%BA%E6%89%A7%E5%89%91%E8%80%85/thumbnail.jpg" alt="为什么人类会选择威慑度为10%的程心为执剑者"></a></figure><div class="media-content"><p class="date"><time dateTime="2021-01-09T08:51:23.000Z">2021-01-09</time></p><p class="title"><a href="/%E4%B8%BA%E4%BB%80%E4%B9%88%E4%BA%BA%E7%B1%BB%E4%BC%9A%E9%80%89%E6%8B%A9%E5%A8%81%E6%85%91%E5%BA%A6%E4%B8%BA10%E7%9A%84%E7%A8%8B%E5%BF%83%E4%B8%BA%E6%89%A7%E5%89%91%E8%80%85.html">为什么人类会选择威慑度为10%的程心为执剑者</a></p><p class="categories"><a href="/categories/%E6%9D%82%E6%96%87/">杂文</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/%E5%AF%B9%E7%96%AB%E6%83%85%E7%9A%84%E4%B8%80%E7%82%B9%E6%80%9D%E8%80%83.html"><img src="/%E5%AF%B9%E7%96%AB%E6%83%85%E7%9A%84%E4%B8%80%E7%82%B9%E6%80%9D%E8%80%83/thumbnail.jpg" alt="对疫情的一点思考"></a></figure><div class="media-content"><p class="date"><time dateTime="2021-01-08T15:26:18.000Z">2021-01-08</time></p><p class="title"><a href="/%E5%AF%B9%E7%96%AB%E6%83%85%E7%9A%84%E4%B8%80%E7%82%B9%E6%80%9D%E8%80%83.html">对疫情的一点思考</a></p><p class="categories"><a href="/categories/%E6%9D%82%E6%96%87/">杂文</a></p></div></article><article class="media"><figure class="media-left"><a class="image" href="/%E5%AE%89%E5%8F%B2%E4%B9%8B%E4%B9%B1%E7%88%86%E5%8F%91%E5%8E%9F%E5%9B%A0%E7%BB%BC%E8%BF%B0.html"><img src="/%E5%AE%89%E5%8F%B2%E4%B9%8B%E4%B9%B1%E7%88%86%E5%8F%91%E5%8E%9F%E5%9B%A0%E7%BB%BC%E8%BF%B0/thumbnail.jpeg" alt="安史之乱爆发原因综述"></a></figure><div class="media-content"><p class="date"><time dateTime="2021-01-08T05:35:07.000Z">2021-01-08</time></p><p class="title"><a href="/%E5%AE%89%E5%8F%B2%E4%B9%8B%E4%B9%B1%E7%88%86%E5%8F%91%E5%8E%9F%E5%9B%A0%E7%BB%BC%E8%BF%B0.html">安史之乱爆发原因综述</a></p><p class="categories"><a href="/categories/%E5%8E%86%E5%8F%B2/">历史</a> / <a href="/categories/%E5%8E%86%E5%8F%B2/%E5%94%90%E6%9C%9D/">唐朝</a></p></div></article></div></div><div class="card widget" data-type="categories"><div class="card-content"><div class="menu"><h3 class="menu-label">分类</h3><ul class="menu-list"><li><a class="level is-mobile" href="/categories/Computer-Science/"><span class="level-start"><span class="level-item">Computer Science</span></span><span class="level-end"><span class="level-item tag">1</span></span></a><ul><li><a class="level is-mobile" href="/categories/Computer-Science/Linux/"><span class="level-start"><span class="level-item">Linux</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></li><li><a class="level is-mobile" href="/categories/%E5%8E%86%E5%8F%B2/"><span class="level-start"><span class="level-item">历史</span></span><span class="level-end"><span class="level-item tag">4</span></span></a><ul><li><a class="level is-mobile" href="/categories/%E5%8E%86%E5%8F%B2/%E5%94%90%E6%9C%9D/"><span class="level-start"><span class="level-item">唐朝</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8E%86%E5%8F%B2/%E6%B1%89%E6%9C%9D/"><span class="level-start"><span class="level-item">汉朝</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li><li><a class="level is-mobile" href="/categories/%E5%8E%86%E5%8F%B2/%E8%BF%91%E4%BB%A3%E5%8F%B2/"><span class="level-start"><span class="level-item">近代史</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></li><li><a class="level is-mobile" href="/categories/%E6%95%B0%E5%AD%A6/"><span class="level-start"><span class="level-item">数学</span></span><span class="level-end"><span class="level-item tag">2</span></span></a><ul><li><a class="level is-mobile" href="/categories/%E6%95%B0%E5%AD%A6/Probability-and-Statistics/"><span class="level-start"><span class="level-item">Probability and Statistics</span></span><span class="level-end"><span class="level-item tag">1</span></span></a></li></ul></li><li><a class="level is-mobile" href="/categories/%E6%9D%82%E6%96%87/"><span class="level-start"><span class="level-item">杂文</span></span><span class="level-end"><span class="level-item tag">2</span></span></a></li></ul></div></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/CS/"><span class="tag">CS</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/Linux/"><span class="tag">Linux</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/git/"><span class="tag">git</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/test/"><span class="tag">test</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E4%B8%89%E4%BD%93/"><span class="tag">三体</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%8E%86%E5%8F%B2/"><span class="tag">历史</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%94%90%E6%9C%9D/"><span class="tag">唐朝</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%88%91%E7%9A%84/"><span class="tag">我的</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%95%B0%E5%AD%A6/"><span class="tag">数学</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%97%B6%E8%AF%84/"><span class="tag">时评</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%AE%BA%E6%96%87/"><span class="tag">论文</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%BD%AC%E8%BD%BD/"><span class="tag">转载</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E8%BF%91%E4%BB%A3%E5%8F%B2/"><span class="tag">近代史</span><span class="tag">1</span></a></div></div></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img class="logo-img" src="/img/logo.svg" alt="Hexo" height="28"><img class="logo-img-dark" src="/" alt="Hexo" height="28"></a><p class="is-size-7"><span>&copy; 2021 Fly</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p></div><div class="level-end"><div class="field has-addons"><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Creative Commons" href="https://creativecommons.org/"><i class="fab fa-creative-commons"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Attribution 4.0 International" href="https://creativecommons.org/licenses/by/4.0/"><i class="fab fa-creative-commons-by"></i></a></p><p class="control"><a class="button is-transparent is-large" target="_blank" rel="noopener" title="Download on GitHub" href="https://github.com/ppoffice/hexo-theme-icarus"><i class="fab fa-github"></i></a></p></div></div></div></div></footer><script src="https://cdnjs.loli.net/ajax/libs/jquery/3.3.1/jquery.min.js"></script><script src="https://cdnjs.loli.net/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script><script src="https://cdnjs.loli.net/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" async></script><script>moment.locale("zh-CN");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdnjs.loli.net/ajax/libs/cookieconsent/3.1.1/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdnjs.loli.net/ajax/libs/lightgallery/1.6.8/js/lightgallery.min.js" defer></script><script src="https://cdnjs.loli.net/ajax/libs/justifiedGallery/3.7.0/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><script type="text/x-mathjax-config">MathJax.Hub.Config({
+            'HTML-CSS': {
+                matchFontHeight: false
+            },
+            SVG: {
+                matchFontHeight: false
+            },
+            CommonHTML: {
+                matchFontHeight: false
+            },
+            tex2jax: {
+                inlineMath: [
+                    ['$','$'],
+                    ['\\(','\\)']
+                ]
+            }
+        });</script><script src="https://cdnjs.loli.net/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" defer></script><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script><script type="text/javascript" src="/js/imaegoo/universe.js"></script></body></html>
