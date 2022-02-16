@@ -1,0 +1,32 @@
+### 一.	原问题与对偶问题
+
+我的确理解错了原问题的概念，诚如您所说，下式才被称为原问题
+$$
+\begin{align}
+&\min\limits_{\mathbf{w},b} \frac{1}{2}||\mathbf{w}||_2^2\\\\
+&s.t.y_i\left (\mathbf{w}\mathbf{x}_i+  b \right)\geq 1 & i=1,\cdots,n
+\end{align}
+$$
+如果我们定义函数$\theta(\mathbf{w},b)=\max\limits_{\alpha_i \geq 0}L(\mathbf{w},b,\boldsymbol{\alpha})$，则$\theta$的极小化问题
+$$
+\min\limits_{\mathbf{w},b}\theta(\mathbf{w},b)=\min\limits_{\mathbf{w},b}\max\limits_{\alpha_i \geq 0}L(\mathbf{w},b,\boldsymbol{\alpha})
+$$
+与原问题等价。
+
+原问题的对偶问题为
+$$
+\max\limits_{\alpha_i \geq 0}\min\limits_{\mathbf{w},b}L(\mathbf{w},b,\boldsymbol{\alpha})
+$$
+
+### 二.	SVM推导过程中的KKT条件
+
+在查看这篇文章后[支持向量机（SVM）——原理篇 - 知乎 (zhihu.com)](https://zhuanlan.zhihu.com/p/31886934)，我对其中的推导逻辑感到有些迷惑，这篇文章中说到
+
+<img src="https://www.hualigs.cn/image/6178bace6fb20.jpg" style="zoom: 67%;" />
+
+并且后面也说到
+
+<img src="https://www.hualigs.cn/image/6178beea26311.jpg" style="zoom:67%;" />
+
+似乎KKT条件是我人为地让它满足，而非直接证明原问题满足KKT条件。因此我比较好奇，KKT条件是我对原问题附加的条件，还是原问题可以推导出其满足KKT条件？如果是后者，那么$\alpha_i[y_i(\mathbf{w}^T\mathbf{x}_i+b)-1]=0$也就是KKT条件中的$\alpha_ig_i(\mathbf{x})=0$，又该如何证明成立呢？
+
